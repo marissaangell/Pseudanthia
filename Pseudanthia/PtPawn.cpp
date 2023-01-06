@@ -1,17 +1,29 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2023 Marissa Angell, all rights reserved.
 
 
 #include "PtPawn.h"
 
-#include "InputMappingContext.h"
+//Enhanced Input System
 #include "EnhancedInputSubsystems.h"
-//#include "EnhancedInputComponent.h"
+#include "EnhancedInputComponent.h"
+#include "InputConfigData.h"
+
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
 APtPawn::APtPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+    // Set up camera spring arm
+    CameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+
+    // Set up camera component
+    Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+    Camera->SetupAttachment(CameraSpringArm, USpringArmComponent::SocketName);
+    Camera->bUsePawnControlRotation = false;
 
 }
 
@@ -32,37 +44,35 @@ void APtPawn::Tick(float DeltaTime)
 // Called to bind functionality to input
 void APtPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
     /*
-    * Enhanced Input System setup - https://docs.unrealengine.com/4.26/en-US/InteractiveExperiences/Input/EnhancedInput/
+    * Enhanced Input setup tutorial - https://nightails.com/2022/10/16/unreal-engine-enhanced-input-system-in-c/
     */
-    // Make sure that we are using a UEnhancedInputComponent; if not, the project is not configured correctly.
-    //if (UEnhancedInputComponent* PlayerEnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-    //{
-    //    // There are ways to bind a UInputAction* to a handler function and multiple types of ETriggerEvent that may be of interest.
-
-    //    // This calls the handler function on the tick when MyInputAction starts, such as when pressing an action button.
-    //    //if (MyInputAction)
-    //    //{
-    //    //    PlayerEnhancedInputComponent->BindAction(MyInputAction, ETriggerEvent::Started, this, &AMyPawn::MyInputHandlerFunction);
-    //    //}
-
-    //    //// This calls the handler function (a UFUNCTION) by name on every tick while the input conditions are met, such as when holding a movement key down.
-    //    //if (MyOtherInputAction)
-    //    //{
-    //    //    PlayerEnhancedInputComponent->BindAction(MyOtherInputAction, ETriggerEvent::Triggered, this, TEXT("MyOtherInputHandlerFunction"));
-    //    //}
-    //}
 
     // Get the player controller
     APlayerController* PC = Cast<APlayerController>(GetController());
 
     // Get the local player subsystem
-    UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-    // Clear out existing mapping, and add our mapping
-    Subsystem->ClearAllMappings();
-    Subsystem->AddMappingContext(InputMapping, 0);
+    UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 
+    // Clear out existing mapping, and add our mapping
+    InputSubsystem->ClearAllMappings();
+    InputSubsystem->AddMappingContext(InputMapping, 0);
+
+    // Get the EnhancedInputComponent
+    UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+
+    // Bind the actions
+    EnhancedInputComponent->BindAction(InputConfig->InputMove, ETriggerEvent::Triggered, this, &APtPawn::Move);
+    EnhancedInputComponent->BindAction(InputConfig->InputLook, ETriggerEvent::Triggered, this, &APtPawn::Look);
+
+}
+
+void APtPawn::Move(const FInputActionValue& Value)
+{
+}
+
+void APtPawn::Look(const FInputActionValue& Value)
+{
 }
 
